@@ -1,0 +1,9 @@
+ld $t1, $s2
+add $t1, $t2
+L1:
+addi $t1, 2
+shf $t3, $t1
+nor $c, $zero
+bneg L1
+st $s1,$t1
+stp
