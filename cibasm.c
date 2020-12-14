@@ -1,17 +1,18 @@
 //Assembler for CIBBA in C/C++ (NOTE: may run natively in C alone) (CSE 141L Lab3)
 //Cole Tynan-Wood
+//to compile: g++ -g -o cib cibba_asm.cpp
 //TODO:
 //		- Add support for taking filenames from cmd line
 //		- Error checking and detailed bug reports
 //		- stricter syntax checking (namely for branch labels)
 //		- output file format may need to be binary (rather than text with hex representation of machine code)
 
-#include <iostream>
+//#include <iostream>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-using namespace std;
+//using namespace std;
 
 struct label
 {
@@ -27,7 +28,6 @@ struct branch
 
 //key is label, int value is location
 
-//const unordered_map< const char*, int> regTable ( {{"$zero", 0}, {"$s1",1}, {"$s2", 2}, {"$t1", 3}, {"$t2", 4}, {"$t3", 5}, {"$t4", 6}, {"$c", 7}});
 
 int decodeReg(char *reg) {
 	if(strcmp(reg, "$zero") == 0)
@@ -62,12 +62,14 @@ int main(int argc, char* argv[]) {
 	struct branch branchTable[20];
 	int numBranches = 0;
 	
-	char *inFileName
-	if (argc > 0) {
-		inFileName	=(char*)malloc(sizeof(argv))
-		strcpy(inFileName, argv);
+	char *inFileName = "test.txt";
+	if (argc > 1) {
+		inFileName	=(char*)malloc(sizeof(argv[1]));
+		strcpy(inFileName, argv[1]);
 	} else {
-		inFileName = "test.txt";
+		printf("No input file entered, using test.txt");
+		//inFileName = "test.txt";
+		//strcpy(inFileName, "test.txt");
 	}
 	
 	FILE *inFile;
@@ -79,7 +81,7 @@ int main(int argc, char* argv[]) {
 	int op1, op2;
 	
 	if (inFile == NULL) {
-		cout << "input file failed to load\n";
+		printf( "input file failed to load\n");
 		return -1;
 	}
 	
@@ -181,7 +183,7 @@ int main(int argc, char* argv[]) {
 	
 	//output to binary file
 	FILE *outFile;
-	outFile = fopen("out.txt", "w");
+	outFile = fopen("machine_code.txt", "w");
 	
 	for (int i = 0; i < progCtr; i++) {
 		fprintf(outFile, "%03x\n", machProgram[i]);
