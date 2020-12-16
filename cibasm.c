@@ -1,19 +1,54 @@
-//Assembler for CIBBA in C/C++ (NOTE: may run natively in C alone) (CSE 141L Lab3)
+//Assembler for CIBBA in C (CSE 141L Lab3)
 //Cole Tynan-Wood
-//to compile: g++ -g -o cib cibba_asm.cpp
+//to compile: gcc cibasm.cpp -o cb
+//to use: ./cb.exe input.txt
 //TODO:
-//		- Add support for taking filenames from cmd line
-//		- Error checking and detailed bug reports
-//		- stricter syntax checking (namely for branch labels)
-//		- output file format may need to be binary (rather than text with hex representation of machine code)
+//		+ add comment support (DONE)
+//		+ Add support for taking filenames from cmd line (DONE)
+//		+ Error checking and detailed bug reports
+//		+ stricter syntax checking (namely for branch labels)
+//		+ output file format may need to be binary (rather than text with hex representation of machine code) 
 
-//#include <iostream>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdbool.h>
 
-//using namespace std;
 
+// print machine code in binary to console
+void printBits(int lineNum, void const * const ptr)
+{
+    unsigned char *b = (unsigned char*) ptr;
+    unsigned char byte;
+    int i, j;
+    printf("%d: ", lineNum);
+    for (i = 1; i >= 0; i--) {
+        for (j = 7; j >= 0; j--) {
+			if(i == 1 && j > 0)
+				continue;
+            byte = (b[i] >> j) & 1;
+            printf("%u", byte);
+        }
+    }
+    puts("");
+}
+
+//print to file
+void fPrintBits(FILE* outFile, void const * const ptr)
+{
+    unsigned char *b = (unsigned char*) ptr;
+    unsigned char byte;
+    int i, j;
+    for (i = 1; i >= 0; i--) {
+        for (j = 7; j >= 0; j--) {
+			if(i == 1 && j > 0)
+				continue;
+            byte = (b[i] >> j) & 1;
+            fprintf(outFile, "%u", byte);
+        }
+    }
+}
+  
 struct label
 {
 	int location;
@@ -29,8 +64,12 @@ struct branch
 //key is label, int value is location
 
 
+	int machProgram[1000];		//program in machine code
+	int progCtr = 0;
+	int lineCtr =0;
+	
 int decodeReg(char *reg) {
-	if(strcmp(reg, "$zero") == 0)
+	if(strcmp(reg, "$0")== 0)
 		return 0;
 	else if(strcmp(reg, "$s1") == 0)
 		return 1;
@@ -46,16 +85,17 @@ int decodeReg(char *reg) {
 		return 6;
 	else if(strcmp(reg, "$c") == 0)
 		return 7;
-	else 
-		return -1; //error
+	else {
+		printf("ERROR: unrecognized register %c at line %d", reg[1], lineCtr);
+		exit(-1); //error
+	}
 }
 
+	
 int main(int argc, char* argv[]) {
-	
+	bool DEBUG = 1;
 	//char* fileName = "test.txt";		//TODO: replace with user entered filename
-	int machProgram[1000];		//program in machine code
-	int progCtr = 0;
-	
+
 	struct label labelTable[20];	//max branches = 20
 	int numLabels = 0;		//number of labels
 	
@@ -67,18 +107,19 @@ int main(int argc, char* argv[]) {
 		inFileName	=(char*)malloc(sizeof(argv[1]));
 		strcpy(inFileName, argv[1]);
 	} else {
-		printf("No input file entered, using test.txt");
+		printf("No input file entered, using test.txt\n");
 		//inFileName = "test.txt";
 		//strcpy(inFileName, "test.txt");
 	}
 	
 	FILE *inFile;
 	inFile = fopen(inFileName, "r");
-	char line[50];
+	char line[100];
 
 	char *cop1, *cop2, *label;
 	int ops;
 	int op1, op2;
+	
 	
 	if (inFile == NULL) {
 		printf( "input file failed to load\n");
@@ -88,8 +129,17 @@ int main(int argc, char* argv[]) {
 	//store contents of file, store all branch labels
 	while( fgets(line, sizeof line, inFile) != NULL) {
 		//parse individual line
+		lineCtr++;
+		printf("%d: %s\n", lineCtr, line);
 		char* t = strtok(line, ":\t\n\r, ");
+
 		while(t) {
+			
+			const char *cmt = "#";
+			if  (strstr(t, cmt) != NULL) {
+				break;
+			}
+			
 			if (strcmp(t, "add") == 0) {
 				cop1 = strtok(NULL, "\t\n\r, ");
 				op1 = decodeReg(cop1);
@@ -140,6 +190,10 @@ int main(int argc, char* argv[]) {
 				op1 = decodeReg(cop1);
 				cop2 = strtok(NULL, "\t\n\r, ");
 				op2 = atoi(cop2);
+				if (op2 < -4 || op2 > 3) {
+					printf("ERROR: addi immediate value out of range (pgmctr = %d)", progCtr);
+					return -1;
+				}
 				ops = (op1 << 3) | op2&0x7;
 				machProgram[progCtr] = 0x140 + ((ops)&0x03F);
 				progCtr++;
@@ -161,11 +215,17 @@ int main(int argc, char* argv[]) {
 			else { //must be a LABEL (assuming no errors, TODO refine definition of label as strictly "{LABEL}:")
 				label=(char*)malloc(sizeof(t));
                 strcpy(label,t);
+				const char *desig = "L";
+				if  (strstr(label, desig) == NULL){
+					printf("Label not detected, syntax error around line %d", lineCtr);
+					return -1;
+				}
 				labelTable[numLabels].name = label;
 				labelTable[numLabels].location = progCtr;
 				numLabels++;
 			}	
 			t = strtok(NULL, "\t\n\r, ");
+			
 		}
 	}
 
@@ -173,8 +233,13 @@ int main(int argc, char* argv[]) {
 	for (int i = 0; i < numBranches; i++) {
 		for (int j = 0; j < numLabels; j++) {
 			if (strcmp(branchTable[i].label, labelTable[j].name) == 0) {
-				int branchConst = labelTable[j].location - branchTable[i].location;				
-				machProgram[branchTable[i].location] += ((branchConst)&0x03F);
+				//int branchConst = labelTable[j].location - branchTable[i].location;
+				
+				/*if (branchConst > 31) {	//TODO: change how branching works if this is too limiting
+					printf("ERROR: Branch at location %d is too far from Label %c at location %d", branchTable[i].location,labelTable[i].name, labelTable[i].location);
+					return -1;
+				}*/
+				machProgram[branchTable[i].location] += ((labelTable[j].location)&0x03F);
 			}
 		}
 	}
@@ -183,10 +248,20 @@ int main(int argc, char* argv[]) {
 	
 	//output to binary file
 	FILE *outFile;
-	outFile = fopen("machine_code.txt", "w");
+	outFile = fopen("simulation/modelsim/machine_code.txt", "w");
 	
 	for (int i = 0; i < progCtr; i++) {
-		fprintf(outFile, "%03x\n", machProgram[i]);
+		//fprintf(outFile, "%03x\n", machProgram[i]);
+		fPrintBits(outFile, &machProgram[i]);
+		fprintf(outFile, "\n");
+	}
+	
+	if (DEBUG) {
+		for (int i = 0; i < progCtr; i++) {
+			//fprintf(outFile, "%03x\n", machProgram[i]);
+			printBits(i, &machProgram[i]);
+			
+		}
 	}
 	return 0;
 }

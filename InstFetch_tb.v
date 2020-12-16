@@ -22,7 +22,7 @@ module InstFetch_tb;
 	
 	//init
 	
-	
+	reg[8:0] inst_array[(2**11)-1:0];
 	
 	InstFetch infe1(
 		.reset(reset),
@@ -38,8 +38,12 @@ module InstFetch_tb;
 		.inst_address   (prog_ctr), 
 		.inst_out       (instruction)
 	);
+	initial begin		                  // load from external text file
+  	$readmemb("machine_code.txt",inst_array);
+  end 
 	initial begin
 		//initialize 
+		$readmemb("machine_code.txt",inst_check);
 		reset = 1;
 		start = 1;
 		clk = 0;
@@ -49,24 +53,17 @@ module InstFetch_tb;
 		#20; //begin prog ctr
 		reset = 0;
 		start = 0;
-		#60
-		//do a branch
-		$display("Perfoming branch forward by 4 instructions");
-		ALU_flag = 1;	
-		branch_en = 1;
-		target = 11'b100;	//branch forward by 4 instructions
-		#20
-		ALU_flag = 0;
-		branch_en = 0;
-		#500;
+		#300;
 		$finish();
 	end
 	
 	always@(posedge clk) begin
-		if (prog_ctr == instruction)
-			$display("All good! Prog Ctr: %d, Instruction: %b", prog_ctr, instruction);
+		if(inst_array[prog_ctr] == instruction)
+			$display("Correct! Prog Ctr: %d, Instruction: %b, expected: %b", prog_ctr, instruction, inst_array[prog_ctr]);
 		else
-			$display("ERROR! Prog Ctr: %d, Instruction: %b", prog_ctr, instruction);
+			$display("ERROR! Prog Ctr: %d, Instruction: %b, expected: %b", prog_ctr, instruction, inst_array[prog_ctr]);
+
+			
 	end
 	//clock logic (clogic)
 	always@(clk) begin

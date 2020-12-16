@@ -39,6 +39,7 @@ module CPU(reset, start, clk, ack);
 				immed;
 	reg  [15:0] cycle_ct;	      // standalone; NOT PC!
 
+	wire [7:0]imm_val;
 	// Fetch = Program Counter + instruction ROM
 	// Program Counter
   InstFetch IF1 (
@@ -60,7 +61,7 @@ module CPU(reset, start, clk, ack);
 	.wrt_mem 		(mem_write),
 	.immed			(immed)
   );
-  assign pc_targ = {4'b0, instruction[5:0]};	//NOTE: Sign extend instead??
+  assign pc_targ =  instruction[5:0];	//NOTE: Sign extend instead??
   
 	// instruction ROM
   InstROM IR1(
@@ -68,10 +69,11 @@ module CPU(reset, start, clk, ack);
 	.inst_out       (instruction)
 	);
 	
-	always@(*) begin
+	always@(pgm_ctr) begin
 		ack = (instr_opcode == 3'b0) ? 1'b1  : 1'b0;
+		
 	end
-
+	assign imm_val[7:0] = {{5{instruction[2]}}, instruction[2:0]};
 	//Reg file
 	// Modify D = *Number of bits you use for each register*
     // Width of register is 8 bits, do not modify
@@ -79,6 +81,7 @@ module CPU(reset, start, clk, ack);
 		.clk    		(clk),
 		.write_en   (reg_wr_en), 
 		.branch_en (branch_en),
+		.reset(reset),
 		.r_addr_a    (instruction[5:3]),         
 		.r_addr_b    (instruction[2:0]), 
 		.w_addr     (instruction[5:3]), 	       
@@ -87,12 +90,13 @@ module CPU(reset, start, clk, ack);
 		.data_out_b  (read_b		 )
 	);
 	
-	
+	assign imm_val = {{5{instruction[2]}}, instruction[2:0]};
 	//muxes
 	assign in_a = read_a;						                    // connect RF out to ALU in
-	assign in_b = immed ? instruction[2:0] : read_b;				//2:1 switch for immediate versus register out
+	assign in_b = immed ? imm_val : read_b;				//2:1 switch for immediate versus register out
 	assign instr_opcode = instruction[8:6];
 	assign reg_write_value = load_inst ? mem_read_value : ALU_out;  // 2:1 switch into reg_file
+	assign mem_write_value = read_a;
 
 	// Arithmetic Logic Unit
 	ALU ALU1(
@@ -106,9 +110,9 @@ module CPU(reset, start, clk, ack);
 	 
 	 // Data Memory
 	DataMem DM1(
-		.data_address  (read_a)    , 
+		.data_address  (read_b)    , 
 		.write_en      (mem_write), 
-		.data_in       (mem_write_value), 
+		.data_in       (read_a), 
 		.data_out      (mem_read_value)  , 
 		.clk 		  (clk)     ,
 		.reset		  (reset)
