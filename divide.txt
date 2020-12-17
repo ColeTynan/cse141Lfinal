@@ -1,69 +1,53 @@
-nor $t1, $0
-nor $t2, $0
-nor $t3,$0
-ld $s1, $t1		#$s1 = D
-addi $t1, 1
-ld $s2, $t1		#$s2 = V (temp!)
-
-ld $c, $0		#c = 7 (iterator)
-
-L1:				#for loop
-nor $t1, $0		#zero out our temp registers
-nor $t1, $s1	# $t1 = $s1
-nor $t1, $t1
-
-nor $c, $c		#$c = -$c so we can shift right by this amount
-addi $c, 1	
-shf $t1, $c		# a = D >> j
-
-nor $c, $c		#making c positive again
-addi $c, 1
-
-nor $t3, $0		#storing iterator in t3 (t3 = j)
-nor $t3, $c		
-nor $t3, $t3	#t3 = j
-
-nor $c, $0 		#copying a over to c
-nor $c, $t1
-nor $c, $c
-addi $c, 1		# V <= a === V < a + 1
-nor $s2, $s2	# V = -V
-addi $s1, 1
-
-add $c, $s1		#c = a - V (if negative then V > a)
-nor $s2, $s2	#-V = V
-addi $s2, 1
-
-bneg L2				# if V <= a:
-	nor $t2, $0		# t2 = V
-	nor $t2, $s2
-	nor $t2, $t2
-	shf $t2, $t3	# V << j
-	nor $t2, $t2	
-	addi $t2, $t2	#-V<<j
-	add $s1, $t2	#D = (D - V << j)
-	
-	nor $t1, $0		
-	addi $t1, 1
-	shf $t1, $t3	#1<<j
-	
-	nor $t2, $0
-	addi $t2, 3
-	addi $t2, 1
-	ld $t4, $t2		# t4 = mem[4] (Q)
-	nor $t1, $t4
+nor $t4, $0		#to store Q
+nor $s1, $0		#s1 = 0
+ld $s1, $s1		#s1 = mem[0] (dividend D)
+nor $s2, $0		#s2 = 0
+addi $s2, 1		#s2 = mem[1] (divisor V)
+ld $s2, $s2
+nor $c, $0		#c = -8
+addi $c, -4
+addi $c, -4
+L1:		#for j = -8; j < 0; j++
+	nor $t1, $0
+	nor $t1, $s1	#t1 = D (temp)
 	nor $t1, $t1
-	st $t1, $t2		#mem[4] = Q OR (1<<j)
-L2:
-#replace compare reg value with t3 (j)
-nor $c, $0		#c = j
-nor $c, $t3
-nor $c, $c
-addi $c, -1
+	addi $c, 1		# increment c by one so we shift by the correct number of places
+	shf $t1, $c		# t1 = D >> j + 1 = a
+	st $c, $0		# mem[$0] = j + 1
+	nor $s2, $s2	#s2 = -s2 (V = -V)
+	addi $s2, 1		#^
+	add $t1, $s2	#t1 = a - V (if this is <0 than the bneg if statement is skipped)
+	nor $s2, $s2	# -V -> V
+	addi $s2, 1
+	nor $c, $0		#c = 0
+	nor $c, $t1		#c = t1
+	nor $c, $c
+	bneg L2			#if statement	23
+		ld $c, $0		#c = j + 1
+		nor $c, $c		#make j + 1 positive (ex: -7 -> 7)
+		addi $c, 1
+		nor $t1, $0
+		nor $t1, $s2	#t1 = V
+		nor $t1, $t1	#^
+		shf $t1, $c		#V << j
+		nor $t1, $t1	#-V<<j
+		addi $t1, 1
+		add $s1, $t1	# s1 = D = (D - V << (j + 1)) 32
+		nor $t1, $0		#t1 = 0
+		addi $t1, 1		#t1 = 1
+		shf $t1, $c		#t1 = 1<<(j+1) 
+		nor $t4, $t1	#t4 = Q = Q OR (1<<(j+1))
+		nor $t4, $t4
+		
+	L2:
+	ld $c, $0		#restore c = j 
 bneg L1
-
-addi $t2, 1		#t2 = 5
-st $s1, $t2
+nor $t1, $0		#t1 = 0
+addi $t1, 3		#t1 = 3
+addi $t1, 1		#t1 = 4
+st $t4, $t1		#mem[4] = Q
+addi $t1, 1
+st $s1, $t1
 
 stp
 
@@ -71,3 +55,9 @@ stp
 
 
 
+	
+	
+	
+
+
+	

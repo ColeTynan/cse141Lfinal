@@ -40,7 +40,7 @@ module DataMem(clk,reset,write_en,data_address,data_in,data_out);
 // you may initialize your memory w/ constants, if you wish
       for(i=0;i<256;i= i + 1)
 	      core[i] <= 0;
-      core[255] <= 8'b7;			   // 
+
 	end
     else if(write_en) 
       core[data_address] <= data_in;

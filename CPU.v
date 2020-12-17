@@ -69,7 +69,7 @@ module CPU(reset, start, clk, ack);
 	.inst_out       (instruction)
 	);
 	
-	always@(pgm_ctr) begin
+	always@(pgm_ctr, instr_opcode) begin
 		ack = (instr_opcode == 3'b0) ? 1'b1  : 1'b0;
 		
 	end
@@ -104,7 +104,7 @@ module CPU(reset, start, clk, ack);
 		.input_b(in_b),
 		.OP(instr_opcode),				  
 		.out(ALU_out),		  			
-		.zero()
+		.zero(zero)
 	);
 	 
 	 
@@ -112,7 +112,7 @@ module CPU(reset, start, clk, ack);
 	DataMem DM1(
 		.data_address  (read_b)    , 
 		.write_en      (mem_write), 
-		.data_in       (read_a), 
+		.data_in       (mem_write_value), 
 		.data_out      (mem_read_value)  , 
 		.clk 		  (clk)     ,
 		.reset		  (reset)

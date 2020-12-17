@@ -1,4 +1,4 @@
-//Assembler for CIBBA in C (CSE 141L Lab3)
+//Assembler for CIBBA in C 
 //Cole Tynan-Wood
 //to compile: gcc cibasm.cpp -o cb
 //to use: ./cb.exe input.txt
@@ -7,7 +7,6 @@
 //		+ Add support for taking filenames from cmd line (DONE)
 //		+ Error checking and detailed bug reports
 //		+ stricter syntax checking (namely for branch labels)
-//		+ output file format may need to be binary (rather than text with hex representation of machine code) 
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -15,7 +14,7 @@
 #include <stdbool.h>
 
 
-// print machine code in binary to console
+// print machine code in binary to console ( debug)
 void printBits(int lineNum, void const * const ptr)
 {
     unsigned char *b = (unsigned char*) ptr;
@@ -61,13 +60,10 @@ struct branch
 	char* label;
 };
 
-//key is label, int value is location
+int machProgram[1000];		//program in machine code
+int progCtr = 0;
+int lineCtr =0;
 
-
-	int machProgram[1000];		//program in machine code
-	int progCtr = 0;
-	int lineCtr =0;
-	
 int decodeReg(char *reg) {
 	if(strcmp(reg, "$0")== 0)
 		return 0;
@@ -130,7 +126,7 @@ int main(int argc, char* argv[]) {
 	while( fgets(line, sizeof line, inFile) != NULL) {
 		//parse individual line
 		lineCtr++;
-		printf("%d: %s\n", lineCtr, line);
+
 		char* t = strtok(line, ":\t\n\r, ");
 
 		while(t) {
@@ -191,7 +187,7 @@ int main(int argc, char* argv[]) {
 				cop2 = strtok(NULL, "\t\n\r, ");
 				op2 = atoi(cop2);
 				if (op2 < -4 || op2 > 3) {
-					printf("ERROR: addi immediate value out of range (pgmctr = %d)", progCtr);
+					printf("ERROR: addi immediate value out of range (line = %d)", lineCtr);
 					return -1;
 				}
 				ops = (op1 << 3) | op2&0x7;
@@ -217,7 +213,8 @@ int main(int argc, char* argv[]) {
                 strcpy(label,t);
 				const char *desig = "L";
 				if  (strstr(label, desig) == NULL){
-					printf("Label not detected, syntax error around line %d", lineCtr);
+					printf("Label not detected, syntax error around line %d\n", lineCtr);
+					printf("%d: %s\n", lineCtr, line);
 					return -1;
 				}
 				labelTable[numLabels].name = label;
@@ -239,6 +236,7 @@ int main(int argc, char* argv[]) {
 					printf("ERROR: Branch at location %d is too far from Label %c at location %d", branchTable[i].location,labelTable[i].name, labelTable[i].location);
 					return -1;
 				}*/
+				//TODO: add checking to make sure that the branch and the label are within the same 64 instruction block
 				machProgram[branchTable[i].location] += ((labelTable[j].location)&0x03F);
 			}
 		}
