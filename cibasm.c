@@ -237,6 +237,10 @@ int main(int argc, char* argv[]) {
 					return -1;
 				}*/
 				//TODO: add checking to make sure that the branch and the label are within the same 64 instruction block
+				if (branchTable[i].location / 63 != labelTable[j].location / 63){
+					printf("ERROR: branch at location %d not within same 64 bit block as label %c\n",branchTable[i].location, labelTable[i].name);
+					exit(-1);
+				}
 				machProgram[branchTable[i].location] += ((labelTable[j].location)&0x03F);
 			}
 		}
