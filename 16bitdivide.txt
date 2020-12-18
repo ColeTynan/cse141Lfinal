@@ -1,9 +1,8 @@
-#16-bit divide
 nor $t4, $0		#to store QM
 nor $s1, $0		#s1 = 0
 ld $s1, $s1		#s1 = mem[0] (dividend DMSB)
 nor $s2, $0		#s2 = 0
-addi $s2, 1		#s2 = mem[1] (divisor V)
+addi $s2, 2		#s2 = mem[2] (divisor V)
 ld $s2, $s2
 nor $c, $0		#c = -8
 addi $c, -4
@@ -48,22 +47,29 @@ addi $t1, 3		#t1 = 3
 addi $t1, 1		#t1 = 4
 st $t4, $t1		#mem[4] = QM
 
+#nops to bypass branching problem		
+add $t4,$t4
+add $t4,$t4
+add $t4,$t4
+add $t4,$t4
+add $t4,$t4
+add $t4,$t4
+add $t4,$t4
+add $t4,$t4
+add $t4,$t4
+add $t4,$t4
+add $t4,$t4
+add $t4,$t4
+add $t4,$t4
+add $t4,$t4
+#end nops
 
-for i = 7; j>= 0; j--:
-		DM = DM << (8-j)
-		a = (DL >> j) && 1
-		DM = DM + a
-		if V <= DM:
-			DM = DM - (V<<j)
-			QL = QL OR 1<<j
-			
-			
 nor $t4, $0		# t4 = 0 (hold DL)
 addi $t4, 1		# t4 = 1
-ld $t4, $t4		#t4 = DL
+ld $t4, $t4		#t4 = MEM[1] DLSB
 nor $c, $0		#c = -8
 addi $c, -4		
-addi $c, -4
+addi $c, -4 	
 
 L3: #2nd loop, find LSB of Quotient
 	nor $t1, $0		#zero out temp registers
@@ -79,20 +85,20 @@ L3: #2nd loop, find LSB of Quotient
 	nor $t2, $t2	#t2 = (DL >> j) && 1
 	nor $t3, $t3
 	nor $t2, $t3
-
-	addi $t1, 3		#t1 = 8 + j + 1
-	addi $t1, 3		
-	addi $t1, 2
 	
-	shf $s1, $t1	#s1 = DM = DM << (8-j)
+	nor $t1, $0
+	addi $t1, 1		#t1 = 1
+	
+	shf $s1, $t1	#s1 = DM = DM << 1 (79)
 	add $s1, $t2	#s1 = DM = DM + a
 	
 	nor $s2, $s2	#s2 = -s2 (v = -v)
 	addi $s2, 1 
-	st $c, $0		$mem[$0] = j
+	st $c, $0		#mem[$0] = j
 	nor $c, $0
-	add $c, $s1		#c = DM 
-	add $c, $s2		#c = DM - V
+	addi $c, 1		#c = 1
+	add $c, $s1		#c = DM +1
+	add $c, $s2		#c = DM - V + 1
 	nor $s2, $s2	#-v => v
 	addi $s2, 1
 	
@@ -102,15 +108,14 @@ L3: #2nd loop, find LSB of Quotient
 		addi $c, 1
 		nor $t1, $0
 		add $t1, $s2	#t1 = V
-		shf $t1, $c		#V << j
-		nor $t1, $t1	#-V<<j
+		nor $t1, $t1	#-V
 		addi $t1, 1
-		add $s1, $t1	# s1 = D = (D - V << (j + 1)) 32
+		add $s1, $t1	# s1 = D = (D - V << (j + 1)) 
 		nor $t1, $0		#t1 = 0
 		addi $t1, 1		#t1 = 1
 		shf $t1, $c		#t1 = 1<<(j+1) 
-		nor $t2, 0		#zero out temp
-		nor $t3, 0
+		nor $t2, $0		#zero out temp
+		nor $t3, $0
 		addi $t2, 3
 		addi $t2, 2		#t2 = 5
 		ld $t3, $t2		#t3 = mem[5] (QL)
@@ -121,13 +126,75 @@ L3: #2nd loop, find LSB of Quotient
 	ld $c, $0	#restore c value (iterator)
 bneg L3
 	
+#nops to bypass branching problem		
+add $t4,$t4
+add $t4,$t4
+add $t4,$t4
+add $t4,$t4
+add $t4,$t4
+add $t4,$t4
+add $t4,$t4
+add $t4,$t4
+add $t4,$t4
+add $t4,$t4
+add $t4,$t4
+add $t4,$t4
+add $t4,$t4
+add $t4,$t4
+#end nops
+
+
+#3rd loop
+
+nor $c, $0
+addi $c, -4		#j = -8
+addi $c, -4	
+
+L5:	#for j = -8, j < 0, j ++
 	
-#TODO: 3rd loop
+	addi $c, 3		#j = j + 9
+	addi $c, 3
+	addi $c, 3
+	nor $t1, $0		#t1 = 0
+	addi $t1, 1
+	shf $s1, $t1	#DM = DM << j
+	nor $s2, $s2	#v = -v
+	addi $s2, 1
+	st $c, $0		#mem[255] = j
+	nor $c,$0		#c = 0
+	addi $c,1		#c= 1
+	add $c, $s2		#c = -V + 1
+	add $c, $s1		#c = DM - V + 1
+	nor $s2, $s2	#-v => V
+	addi $s2, 1		
+	bneg L6		#if DM-V+1 < 0, skip 
+		nor $s2, $s2	#v => -V
+		addi $s2, 1		
+		add $s1, $s2	#DM = DM - V
+		nor $s2, $s2	# -v => V
+		addi $s2, 1
+		nor $t1, $0
+		addi $t1, 3
+		addi $t1, 3		#t1 = 6
+		ld $t2, $t1		#t2 = mem[6] (QFrac)
+		ld $t3, $0		#t3 = j
+		nor $t3, $t3	#155
+		addi $t3, 1		# t3 = -j
+		addi $t3, 3		
+		addi $t3, 3
+		addi $t3, 2		#t3 = -j + 8
+		nor $t4, $0
+		addi $t4, 1		#t4 = 1
+		shf $t4, $t3 	#t4 = 1<<(8-j) 162
+		nor $t2, $t4
+		nor $t2, $t2	#t2 = QFrac or (1<<(8-j))
+		st $t2, $t1		#mem[6] = Qfrac
+	L6:
+ld $c, $0
+addi $c, -3		#j = j - 8
+addi $c, -3
+addi $c, -2
+bneg L5
 
+stp
 			
-			
-
-
-
-
-

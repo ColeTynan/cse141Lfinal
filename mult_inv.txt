@@ -1,0 +1,104 @@
+nor $t1, $0
+nor $t4, $0		#holds QM and QL
+addi $t4, 1
+addi $t1, 2
+nor $s1, $0
+addi $s1, 1		#s1 = DM
+shf $t1, $t1 	#t1 = 8
+ld $s2, $t1		#s2 = M[8] = OM
+nor $c, $0
+addi $c, -4		#j = -7
+addi $c, -3
+
+L7:
+	nor $t1, $0
+	addi $t1, 1		#t1 = 1
+	shf $s1,$t1		#DM << 1
+	nor $s2, $s2	#OM = -OM
+	addi $s2, 1		
+	shf $t4, $t1	#QM << 1
+	st $c, $0
+	add $c, $s2		#c = -OM
+	addi $c, 1		#c = -OM +1
+	add $c, $s1		#c = DM - OM + 1
+	nor $s2, $s2	#-OM -> OM
+	addi $s2, 1
+	bneg L8
+		nor $s2, $s2
+		addi $s2, 1
+		add $s1, $s2		#DM = DM - OM
+		addi $t4, 1			#QM = QM + 1
+	L8:
+	ld $c, $0
+	addi $c, 1
+bneg L7
+
+nor $t1, $0
+addi $t1, 2
+shf $t1, $t1
+addi $t1, 2		#t1 = 10
+st $t4, $t1		#mem[10] = QM
+
+#second loop
+	
+	
+addi $t1, -1
+ld $s2, $t1		#s2 = mem[9] (OL)
+nor $c, $0
+addi $c, -4		#j = -8
+addi $c, -4
+
+L9:
+	nor $t1, $0
+	addi $t1, 1
+	shf $s1, $t1	#DM << 1
+	shf $t4, $t1	# QL << 1
+	nor $t2, $t2
+	addi $t2, 1		#OL = -OL
+	st $c, $0
+	nor $c, $0
+	add $c, $t2		#c = -OL
+	addi $c, 1		#c=1-OL
+	add $c, $s1		#c = DM
+	nor $s2, $s2	#-OL -> OL
+	addi $s2, 1
+	bneg L10
+		nor $s2, $s2	#OL -> -OL
+		addi $s2, 1
+		add $s1, $s2	#DM = DM + OL
+		addi $t4, 1		#QL = QL + 1
+	L10:
+	ld $c, $0
+	addi $c, 1
+bneg L9
+	
+
+nor $t1, $0
+addi $t1, 2
+shf $t1, $t1
+addi $t1, 3		#t1 = 11
+st $t4, $t1		#mem[11] = QM
+		
+stp
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+

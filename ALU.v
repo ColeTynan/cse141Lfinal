@@ -16,7 +16,6 @@ module ALU(input_a,input_b,OP,out,zero);
 	input [2:0] OP;
 	output reg [7:0] out; // logic in SystemVerilog
 	output reg zero;
-
 	/* Opcodes
 	000: stp (halt)
 	001: shf
@@ -32,7 +31,9 @@ module ALU(input_a,input_b,OP,out,zero);
 		out = 0;
 		casex (OP)
 		3'b11x: out = input_b;			 //ld/st
-		3'b10x: out = input_a + input_b; // add operations
+		3'b10x: begin
+			out = input_a + input_b; // add operations
+		end
 		3'b011: out = ~(input_a | input_b); // Nor
 		3'b001: out = (input_b[3] == 1'b0) ? input_a << input_b[3:0] : input_a >> (~input_b[3:0] + 1'b1) ;				// Shift (default right)
 		3'b010: out = (input_a[7] == 1) ? 8'b0 : 8'b1; //bneg
@@ -46,7 +47,7 @@ module ALU(input_a,input_b,OP,out,zero);
 		case(out)
 			'b0     : zero = 1'b1;
 			default : zero = 1'b0;
-      endcase
+      endcase		
 	end
 
 

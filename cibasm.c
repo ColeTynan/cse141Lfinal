@@ -2,11 +2,6 @@
 //Cole Tynan-Wood
 //to compile: gcc cibasm.cpp -o cb
 //to use: ./cb.exe input.txt
-//TODO:
-//		+ add comment support (DONE)
-//		+ Add support for taking filenames from cmd line (DONE)
-//		+ Error checking and detailed bug reports
-//		+ stricter syntax checking (namely for branch labels)
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -125,8 +120,8 @@ int main(int argc, char* argv[]) {
 	//store contents of file, store all branch labels
 	while( fgets(line, sizeof line, inFile) != NULL) {
 		//parse individual line
+		//printf("%s\n", line);
 		lineCtr++;
-
 		char* t = strtok(line, ":\t\n\r, ");
 
 		while(t) {
@@ -237,8 +232,11 @@ int main(int argc, char* argv[]) {
 					return -1;
 				}*/
 				//TODO: add checking to make sure that the branch and the label are within the same 64 instruction block
+				
+				if (DEBUG) 
+					printf("Label %s at pgmctr %d, branch at location %d\n", labelTable[j].name, labelTable[j].location, branchTable[i].location);
 				if (branchTable[i].location / 63 != labelTable[j].location / 63){
-					printf("ERROR: branch at location %d not within same 64 bit block as label %c\n",branchTable[i].location, labelTable[i].name);
+					printf("ERROR: branch at location %d not within same 64 bit block as label %s\n",branchTable[i].location, labelTable[j].name);
 					exit(-1);
 				}
 				machProgram[branchTable[i].location] += ((labelTable[j].location)&0x03F);

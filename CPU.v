@@ -21,8 +21,8 @@ module CPU(reset, start, clk, ack);
 
 	
 	
-	wire [ 10:0] pgm_ctr,        // program counter
-			    pc_targ;
+	wire [ 10:0] pgm_ctr;      // program counter
+	wire [5:0]   pc_targ;
 	wire [ 8:0] instruction;   // our 9-bit instruction
 	wire [ 2:0] instr_opcode;  // out 3-bit opcode
 	wire [ 7:0] read_a, read_b;  // reg_file outputs
