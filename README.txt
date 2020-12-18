@@ -38,3 +38,6 @@ positive on a branch instruction, because the CPU thinks its reading signed numb
 -I was unable to even get to attempt program 3, because I was so busy trying to get these other two programs to work first.
 
 ROUNDING: I didn't really do any rounding, I just let the algorithm run until the bytes were filled.
+
+Recording:
+https://youtu.be/UJ194-dZpx4
